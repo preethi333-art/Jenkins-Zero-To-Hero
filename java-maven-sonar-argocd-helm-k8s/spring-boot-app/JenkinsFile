@@ -5,6 +5,14 @@ pipeline {
       args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
     }
   }
+environment {
+        DOCKER_IMAGE = "preethi993/spring-boot:${BUILD_NUMBER}"
+        DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
+        REGISTRY_CREDENTIALS = credentials('docker-cred')
+        ECR_REPOSITORY = 'frissly'
+        AWS_ACCOUNT_ID = '528757822483'
+        AWS_REGION = 'us-east-1'
+      }
   stages {
     stage('Checkout') {
       steps {
@@ -20,11 +28,7 @@ pipeline {
       }
     }
     stage('Build and Push Docker Image') {
-      environment {
-        DOCKER_IMAGE = "preethi993/spring-boot:${BUILD_NUMBER}"
-        DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
-        REGISTRY_CREDENTIALS = credentials('docker-cred')
-      }
+      
       steps {
         script {
             sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
@@ -35,6 +39,39 @@ pipeline {
             }
         }
       }
+             stage('Create ECR Repository if Not Exists') {
+            steps {
+                script {
+                    sh '''
+                        # Check if the repository exists, if not, create it
+                        aws ecr describe-repositories --repository-names ${ECR_REPOSITORY} --region ${AWS_REGION} || \
+                        aws ecr create-repository --repository-name ${ECR_REPOSITORY} --region ${AWS_REGION}
+                    '''
+                }
+            }
+        }
+
+        stage('Push Into ECR') {
+            steps {
+                  {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Credetilas_id']]) {
+                        sh '''
+                            # Login to AWS ECR
+                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                            
+                            # Check if the image exists locally
+                            docker images | grep ${DOCKER_IMAGE}
+                            
+                            # Tag the Docker image with the correct ECR repository
+                            docker tag ${DOCKER_IMAGE} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                            
+                            # Push the Docker image to ECR
+                            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                        '''
+                    }
+                }
+            }
+        }
     }
   }
 }
