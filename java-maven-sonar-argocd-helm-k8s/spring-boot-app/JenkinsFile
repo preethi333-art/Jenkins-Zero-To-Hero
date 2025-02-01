@@ -1,10 +1,8 @@
 pipeline {
-  agent {
-    docker {
-      image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
-    }
-  }
+  agent any
+tools{
+    maven 'maven'
+}
   environment {
     DOCKER_IMAGE = "preethi993/spring-boot:${BUILD_NUMBER}"
     DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
