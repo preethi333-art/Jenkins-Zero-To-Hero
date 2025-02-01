@@ -1,9 +1,4 @@
 pipeline {
-  agent any
-tools {
-    // Define the Maven tool using the name you've configured in Jenkins Global Tool Configuration
-    maven 'maven'  // Replace 'maven' with the name of your Maven tool if it differs
-  }
 agent {
     docker {
       image 'abhishekf5/maven-abhishek-docker-agent:v1'
