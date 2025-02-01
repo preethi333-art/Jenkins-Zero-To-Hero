@@ -1,9 +1,8 @@
 pipeline {
-agent {
-    docker {
-      image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
-    }
+agent any
+tools {
+    // Define the Maven tool using the name you've configured in Jenkins Global Tool Configuration
+    maven 'maven'  // Replace 'maven' with the name of your Maven tool if it differs
   }
   stages {
     stage('Checkout') {
