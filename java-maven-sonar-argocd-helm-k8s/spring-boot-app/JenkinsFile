@@ -1,8 +1,8 @@
 pipeline {
   agent any
-tools{
-    maven 'maven'
-}
+  tools {
+      maven 'maven'
+   }
   environment {
     DOCKER_IMAGE = "preethi993/spring-boot:${BUILD_NUMBER}"
     DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
