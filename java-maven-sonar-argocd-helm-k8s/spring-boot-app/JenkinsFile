@@ -52,5 +52,38 @@ pipeline {
         }
       }
     }
+
+stage('Create ECR Repository if Not Exists') {
+            steps {
+                script {
+                    sh '''
+                        # Check if the repository exists, if not, create it
+                        aws ecr describe-repositories --repository-names ${ECR_REPOSITORY} --region ${AWS_REGION} || \
+                        aws ecr create-repository --repository-name ${ECR_REPOSITORY} --region ${AWS_REGION}
+                    '''
+                }
+            }
+        }
+stage('Push Into ECR') {
+            steps {
+                  {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Credetilas_id']]) {
+                        sh '''
+                            # Login to AWS ECR
+                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                            
+                            # Check if the image exists locally
+                            docker images | grep ${DOCKER_IMAGE}
+                            
+                            # Tag the Docker image with the correct ECR repository
+                            docker tag ${DOCKER_IMAGE} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                            
+                            # Push the Docker image to ECR
+                            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+                        '''
+                    }
+                }
+            }
+        }
   }
 }
