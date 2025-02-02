@@ -5,6 +5,7 @@ pipeline {
   }
   environment {
     DOCKER_IMAGE = "preethi993/spring-boot:${BUILD_NUMBER}"
+    DOCKER_IMAGE1 = "swiggy"
     DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
     REGISTRY_CREDENTIALS = credentials('docker-cred')
     ECR_REPOSITORY = 'frissly'
@@ -38,11 +39,8 @@ pipeline {
     stage('Build and Push Docker Image') {
       steps {
         script {
-          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
+          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE1} .'
           sh 'echo $USER'
-          def dockerImage = docker.image("${DOCKER_IMAGE}")
-          docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
-            dockerImage.push()
           }
         }
       }
@@ -56,10 +54,10 @@ pipeline {
             aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
             
             # Check if the image exists locally
-            docker images | grep ${DOCKER_IMAGE}
+            docker images | grep ${DOCKER_IMAGE1}
             
             # Tag the Docker image with the correct ECR repository
-            docker tag ${DOCKER_IMAGE} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
+            docker tag ${DOCKER_IMAGE1} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
             
             # Push the Docker image to ECR
             docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}:latest
