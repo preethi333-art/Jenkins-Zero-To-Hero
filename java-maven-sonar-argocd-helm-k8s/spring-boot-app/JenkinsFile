@@ -85,5 +85,4 @@ stage('Push Into ECR') {
                 }
             }
         }
-  }
 }
